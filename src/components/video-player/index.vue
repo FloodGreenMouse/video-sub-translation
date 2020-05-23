@@ -51,7 +51,10 @@
   transition(name="fadeUp" :duration="150")
     vSubtitles(
       v-show="showSubtitles"
-      :showControls="showControls || !isPlaying")
+      :subtitles="subtitles"
+      :currentTime="currentVideoTime"
+      :showControls="showControls || !isPlaying"
+      @pauseVideo="pauseVideo")
 </template>
 
 <script>
@@ -78,6 +81,12 @@ export default {
     rangeProgress,
     vSubtitles
   },
+  props: {
+    subtitles: {
+      type: Array,
+      default: () => []
+    }
+  },
   data () {
     return {
       isPlaying: false,
@@ -87,7 +96,7 @@ export default {
       controlsHovered: false,
       showControls: true,
       isWindowFocused: false,
-      showSubtitles: false,
+      showSubtitles: true,
       hideControlsTimer: null,
       lastVolume: 1,
       currentVolume: 1,
@@ -160,6 +169,15 @@ export default {
         video.play()
       }
       this.isPlaying = !this.isPlaying
+    },
+    pauseVideo (value) {
+      const video = this.$refs.video
+      if (value) {
+        video.pause()
+      } else {
+        video.play()
+      }
+      this.isPlaying = !value
     },
     toggleFullscreen () {
       if (!this.fullscreenMode) {

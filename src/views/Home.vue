@@ -1,19 +1,28 @@
 <template lang="pug">
 .page.home
   .flex.j-center
-    videoPlayer
+    videoPlayer(:subtitles="subtitles")
+  vConverter(@ready="setSubtitles")
 </template>
 
 <script>
 import videoPlayer from '../components/video-player'
+import vConverter from '../components/converter'
 
 export default {
   components: {
-    videoPlayer
+    videoPlayer,
+    vConverter
   },
   data () {
     return {
-      showVideo: false
+      showVideo: false,
+      subtitles: []
+    }
+  },
+  methods: {
+    setSubtitles (value) {
+      this.subtitles = value
     }
   }
 }
