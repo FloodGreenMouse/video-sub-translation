@@ -1,4 +1,4 @@
-$font-family-default: 'Open Sans', sans-serif;
+$font-family-default: 'Roboto', sans-serif;
 
 $font-size-default: 15px;
 
@@ -8,3 +8,8 @@ $font-weight-extra-light: 100;
 $font-weight-light: 300;
 $font-weight-normal: 400;
 $font-weight-bold: 900;
+
+@font-face {
+  src: url("~@/assets/fonts/Roboto-Bold.ttf");
+  font-family: 'Roboto';
+}

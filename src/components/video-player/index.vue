@@ -1,10 +1,11 @@
 <template lang="pug">
 .video-player-component(
   :class="{'fullscreen': fullscreenMode === true}"
+  @click="toggleFocus"
   @mouseover="showControls = true"
   @mouseleave="showControls = false")
   video(
-    src="@/files/video2.mp4#t=43"
+    src="@/files/video.mp4"
     ref="video"
     @dblclick="toggleFullscreen"
     @click="togglePlaying"
@@ -17,19 +18,40 @@
       @mouseleave="controlsHovered = false")
       .group
         button.play(@click="togglePlaying")
-          transition(name="fade" mode="out-in" :duration="120")
+          transition(
+            name="fade"
+            mode="out-in"
+            :duration="120")
             iconPlay(v-if="!isPlaying" :key="0")
             iconPause(v-if="isPlaying" :key="1")
         .element.volume
           button(@click="offVolume")
-            transition(name="fadeUp" mode="out-in" :duration="100")
+            transition(
+              name="fadeUp"
+              mode="out-in"
+              :duration="100")
               iconSpeaker(v-if="currentVolume !== 0" :key="0")
               iconSpeakerOff(v-if="currentVolume === 0" :key="1")
-          .range
-            rangeVolume(@setvolume="setVolume" :currentVolume="currentVolume")
+          .range(ref="volume")
+            rangeVolume(
+              @setvolume="setVolume"
+              @change="checkVolumeChange"
+              :currentVolume="currentVolume")
+      .group.range-progress
+        rangeProgress(
+          @setprogress="setVideoProgress"
+          :duration="videoDuration"
+          :currentTime="currentVideoTime")
       .group
+        span.timer(v-if="videoDuration !== 0") {{ getVideoTimer }} / {{ getVideoFullTIme }}
+        button.show-subtitles(@click="toggleSubtitles")
+          iconSubtitles
         button(@click="toggleFullscreen")
           iconFullscreen
+  transition(name="fadeUp" :duration="150")
+    vSubtitles(
+      v-show="showSubtitles"
+      :showControls="showControls || !isPlaying")
 </template>
 
 <script>
@@ -37,32 +59,83 @@ import iconPlay from '@/components/icons/play'
 import iconPause from '@/components/icons/pause'
 import iconSpeaker from '@/components/icons/speaker'
 import iconSpeakerOff from '@/components/icons/speaker-off'
+import iconSubtitles from '@/components/icons/subtitles'
 import iconFullscreen from '@/components/icons/fullscreen'
 import rangeVolume from './range-volume'
+import rangeProgress from './range-progress'
+import vSubtitles from '../subtitles'
 
 export default {
   name: 'video-player-component',
   components: {
-    rangeVolume,
     iconPlay,
     iconPause,
     iconSpeaker,
     iconSpeakerOff,
-    iconFullscreen
+    iconSubtitles,
+    iconFullscreen,
+    rangeVolume,
+    rangeProgress,
+    vSubtitles
   },
   data () {
     return {
       isPlaying: false,
       isVolumeOff: false,
+      isVolumeChanging: false,
       fullscreenMode: false,
       controlsHovered: false,
       showControls: true,
+      isWindowFocused: false,
+      showSubtitles: false,
+      hideControlsTimer: null,
       lastVolume: 1,
       currentVolume: 1,
-      hideControlsTimer: null
+      videoWidth: 0,
+      videoDuration: 0,
+      currentVideoTime: 0
+    }
+  },
+  computed: {
+    getVideoTimer () {
+      const formatTime = (time) => {
+        if (time < 10) {
+          return `0${time}`
+        }
+        return time
+      }
+      let hours = formatTime(Math.round(this.videoDuration / 3600))
+      let minutes = formatTime(Math.round(this.currentVideoTime / 60))
+      let seconds = formatTime(Math.round(this.currentVideoTime % 60))
+      if (hours > 0) {
+        return `${hours}:${minutes}:${seconds}`
+      }
+      return `${minutes}:${seconds}`
+    },
+    getVideoFullTIme () {
+      const hours = Math.round(this.videoDuration / 3600)
+      const minutes = Math.round(this.videoDuration / 60)
+      const seconds = Math.round(this.videoDuration % 60)
+      if (hours > 0) {
+        return `${hours}:${minutes}:${seconds}`
+      }
+      return `${minutes}:${seconds}`
     }
   },
   methods: {
+    checkVolumeChange (value) {
+      if (value === true) {
+        this.$refs.volume.style.width = '130px'
+      } else {
+        this.$refs.volume.style.width = null
+      }
+    },
+    toggleSubtitles () {
+      this.showSubtitles ? this.showSubtitles = false : this.showSubtitles = true
+    },
+    toggleFocus () {
+      this.isWindowFocused = true
+    },
     setVolume (value) {
       this.$refs.video.volume = value / 100
       this.currentVolume = value / 100
@@ -80,10 +153,11 @@ export default {
       }
     },
     togglePlaying () {
+      const video = this.$refs.video
       if (this.isPlaying) {
-        this.$refs.video.pause()
+        video.pause()
       } else {
-        this.$refs.video.play()
+        video.play()
       }
       this.isPlaying = !this.isPlaying
     },
@@ -134,21 +208,35 @@ export default {
         this.showControls = true
         this.$el.style.cursor = null
       }
-    }
-  },
-  mounted () {
-    document.onfullscreenchange = () => {
+    },
+    exitFullscreenOnEscape () {
       if (this.fullscreenMode && !window.screenTop && !window.screenY) {
         this.fullscreenMode = false
       }
+    },
+    getCurrentVideoTime () {
+      this.currentVideoTime = this.$refs.video.currentTime
+    },
+    getVideoDuration () {
+      this.videoDuration = this.$refs.video.duration
+    },
+    setVideoProgress (value) {
+      const video = this.$refs.video
+      video.currentTime = video.duration * (value / 100)
     }
+  },
+  mounted () {
+    this.$refs.video.addEventListener('loadedmetadata', this.getVideoDuration)
+    document.onfullscreenchange = () => {
+      this.exitFullscreenOnEscape()
+    }
+    this.$refs.video.addEventListener('timeupdate', this.getCurrentVideoTime)
     this.$el.addEventListener('mousemove', this.toggleControls)
-    // setInterval(() => {
-    //   const currentTime = Math.round(this.$refs.video.currentTime * 1000)
-    //   this.$store.dispatch('setCurrentTime', currentTime)
-    // }, 1)
   },
   beforeDestroy () {
+    this.$refs.video.removeEventListener('loadedmetadata', this.getVideoDuration)
+    document.onfullscreenchange = null
+    this.$refs.video.removeEventListener('timeupdate', this.getCurrentVideoTime)
     this.$el.removeEventListener('mousemove', this.toggleControls)
   }
 }
@@ -212,6 +300,10 @@ export default {
         height: 100%;
         display: flex;
         align-items: center;
+        &.range-progress {
+          width: 100%;
+          justify-content: center;
+        }
       }
       .element {
         display: flex;
@@ -259,15 +351,16 @@ export default {
       }
       .volume {
         position: relative;
-        overflow: hidden;
         justify-content: flex-start;
-        transition: width 0.2s ease;
         padding-right: 10px;
+        width: 130px;
         svg {
           flex-shrink: 0;
         }
         &:hover {
-          width: 130px;
+          .range {
+            width: 130px;
+          }
         }
         .range {
           position: absolute;
@@ -275,7 +368,20 @@ export default {
           top: 0;
           bottom: 0;
           margin: auto;
+          width: 0;
+          overflow: hidden;
+          transition: width 0.2s ease;
         }
+      }
+      .timer {
+        display: block;
+        font-size: 16px;
+        color: #ffffff;
+        margin-right: 20px;
+        white-space: nowrap;
+      }
+      .show-subtitles {
+        margin-right: 20px;
       }
     }
   }

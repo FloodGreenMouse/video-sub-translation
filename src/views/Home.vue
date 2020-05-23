@@ -2,7 +2,6 @@
 .page.home
   .flex.j-center
     videoPlayer
-  // vSubtitles(@ready="subtitlesReady" )
 </template>
 
 <script>

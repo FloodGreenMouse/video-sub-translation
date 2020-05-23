@@ -1,8 +1,9 @@
 <template lang="pug">
-  .subtitle-component
-    input(v-if="showFileInput" type="file" @change="getSubs" ref="file")
+  .subtitle-component(:style="{'bottom': `${showControls ? '70px' : '20px'} `}")
+    // input(v-if="showFileInput" type="file" @change="getSubs" ref="file")
     .text.flex.j-center
       div(v-html="currentText")
+      span Lorem ipsum dolor sit amet, consectetur adipisicing elit
 </template>
 
 <script>
@@ -10,6 +11,13 @@ import { mapState } from 'vuex'
 
 export default {
   name: 'subtitle-component',
+  props: {
+    videoWidth: {
+      type: [String, Number],
+      default: 0
+    },
+    showControls: Boolean
+  },
   data () {
     return {
       subtitles: [],
@@ -92,9 +100,22 @@ export default {
 
 <style lang="scss" scoped>
   .subtitle-component {
+    position: absolute;
+    bottom: 60px;
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    transition: bottom 0.3s ease;
     .text {
-      margin-top: 20px;
-      font-size: 18px;
+      max-width: 850px;
+      width: 100%;
+      font-size: 32px;
+      line-height: 33px;
+      font-weight: bold;
+      color: #ffffff;
+      text-shadow: 0 0 4px #111111;
+      -webkit-text-stroke: 1px #111111;
+      cursor: default;
     }
   }
 </style>

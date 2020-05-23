@@ -1,46 +1,45 @@
 <template lang="pug">
-  .range-volume-component(@click="setRangePosition")
-    .range(ref="range" :style="{width: `${currentVolume * 100}px`}")
+  .range-progress-component(@click="setRangePosition" ref="range")
+    .range(ref="rangeBar")
 </template>
 
 <script>
 export default {
-  name: 'range-volume-component',
+  name: 'range-progress-component',
   props: {
-    currentVolume: {
+    duration: {
       type: Number,
-      default: 100
+      default: 0
+    },
+    currentTime: {
+      type: Number,
+      default: 0
     }
   },
-  data () {
-    return {
-      percent: 0
+  watch: {
+    currentTime () {
+      this.updateRangePosition()
     }
   },
   methods: {
     setRangePosition (e) {
       const barCoords = this.$refs.range.getBoundingClientRect()
-      this.percent = e.pageX - barCoords.left + 2
-      if (this.percent > 100) {
-        this.percent = 100
-      }
-      if (this.percent < 0) {
-        this.percent = 0
-      }
-      const range = this.$refs.range
-      range.style.width = `${this.percent}px`
-      this.$emit('setvolume', this.percent)
+      const width = e.pageX - barCoords.left + 2
+      this.percent = Math.round(width / barCoords.width * 100)
+      this.$refs.rangeBar.style.width = `${width}px`
+      this.$emit('setprogress', this.percent)
+    },
+    updateRangePosition () {
+      this.$refs.rangeBar.style.width = `${this.currentTime / this.duration * 100}%`
     },
     activateMouseMove (e) {
-      if (e.target === this.$refs.range) {
-        this.$refs.range.style.transition = 'none'
-        this.$emit('change', true)
+      if (e.target === this.$refs.rangeBar) {
+        this.$refs.rangeBar.style.transition = 'none'
         document.addEventListener('mousemove', this.setRangePosition)
       }
     },
     deactivateMouseMove () {
-      this.$refs.range.style.transition = null
-      this.$emit('change', false)
+      this.$refs.rangeBar.style.transition = null
       document.removeEventListener('mousemove', this.setRangePosition)
     }
   },
@@ -56,9 +55,10 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-  .range-volume-component {
+  .range-progress-component {
     height: 40px;
-    width: 80px;
+    max-width: calc(100% - 130px);
+    width: 100%;
     cursor: pointer;
     background-color: transparent;
     display: inline-flex;
@@ -66,42 +66,49 @@ export default {
     overflow: hidden;
     position: relative;
     z-index: 1;
+    flex: 1;
+    user-select: none;
+    &:hover .range:after {
+      transform: scale(1);
+    }
+    &:before {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      height: 5px;
+      width: 100%;
+      margin: auto;
+      background-color: rgba(#ffffff, 0.4);
+      border-radius: 2px;
+      z-index: -1;
+    }
     .range {
       position: relative;
       background-color: #ffffff;
       height: 5px;
-      width: 100%;
+      width: 0;
       transition: width 0.2s ease;
       border-radius: 2px;
       max-width: calc(100% - 1px);
-      &:hover:after, &:active:after {
+      user-select: none;
+      &:active:after {
         transform: scale(1);
       }
       &:after {
         content: '';
         position: absolute;
         background-color: #ffffff;
-        width: 8px;
-        height: 8px;
+        width: 10px;
+        height: 10px;
         border-radius: 50%;
         transform: scale(0);
         top: 0;
         bottom: 0;
-        left: calc(100% - 7px);
+        left: calc(100% - 9px);
         margin: auto;
         transition: transform 0.2s ease;
-      }
-      &:before {
-        content: '';
-        position: absolute;
-        left: 0;
-        top: 0;
-        bottom: 0;
-        height: 100%;
-        width: 79px;
-        background-color: rgba(#ffffff, 0.4);
-        border-radius: 2px;
-        z-index: -1;
       }
     }
   }
