@@ -56,9 +56,15 @@ export default {
       const spansArray = []
       stringsArray.forEach(item => {
         const words = item.split(' ')
-        words.forEach(word => {
-          word = word + ' '
-          spansArray.push(word)
+        words.forEach((word, i) => {
+          if (word.trim().length > 0) {
+            if (i === words.length - 1) {
+              word = word.trim() + '\n'
+            } else {
+              word = word.trim() + ' '
+            }
+            spansArray.push(word)
+          }
         })
       })
       this.currentText = spansArray

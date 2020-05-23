@@ -110,17 +110,17 @@ export default {
       max-width: 850px;
       width: 100%;
       font-size: 34px;
-      line-height: 34px;
       font-weight: bold;
       color: #ffffff;
       text-shadow: 0 0 4px #111111;
       -webkit-text-stroke: 1px #111111;
       cursor: default;
-      white-space: pre-line;
+      align-items: flex-end;
       span {
         position: relative;
         cursor: pointer;
         z-index: 0;
+        line-height: 1;
         &:after {
           content: '';
           position: absolute;
