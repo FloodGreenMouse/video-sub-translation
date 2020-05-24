@@ -27,7 +27,7 @@ export default {
     },
     parseSrt (rawSubs) {
       rawSubs = rawSubs.trim()
-      rawSubs = rawSubs.split(/^\n$/gm)
+      rawSubs = rawSubs.split(/^\n/gm)
       rawSubs.forEach((item, i) => {
         if (!item.match(/./gm)) {
           rawSubs.splice(i, 1)
@@ -51,6 +51,7 @@ export default {
         })
       })
       this.showFileInput = false
+      console.log(this.subtitles)
       this.$emit('ready', this.subtitles)
     },
     convertSrtTime (timeString) {

@@ -5,7 +5,7 @@
   @mouseover="showControls = true"
   @mouseleave="showControls = false")
   video(
-    src="@/files/video.mp4"
+    src="@/files/simpsons1.mp4"
     ref="video"
     @dblclick="toggleFullscreen"
     @click="togglePlaying"
