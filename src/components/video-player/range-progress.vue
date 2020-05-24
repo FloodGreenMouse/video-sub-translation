@@ -89,7 +89,6 @@ export default {
       background-color: #ffffff;
       height: 5px;
       width: 0;
-      transition: width 0.2s ease;
       border-radius: 2px;
       max-width: calc(100% - 1px);
       user-select: none;

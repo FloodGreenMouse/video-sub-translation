@@ -10,7 +10,7 @@
     @dblclick="toggleFullscreen"
     @click="togglePlaying"
     :class="{'fullscreen': fullscreenMode === true}"
-    preload="false")
+    preload="auto")
   transition(name="fade" :duration="200")
     .control-bar.flex.j-between(
       v-if="showControls || !isPlaying"
@@ -90,6 +90,7 @@ export default {
   data () {
     return {
       isPlaying: false,
+      isPausedByButton: false,
       isVolumeOff: false,
       isVolumeChanging: false,
       fullscreenMode: false,
@@ -165,19 +166,23 @@ export default {
       const video = this.$refs.video
       if (this.isPlaying) {
         video.pause()
+        this.isPausedByButton = true
       } else {
         video.play()
+        this.isPausedByButton = false
       }
       this.isPlaying = !this.isPlaying
     },
     pauseVideo (value) {
       const video = this.$refs.video
-      if (value) {
-        video.pause()
-      } else {
-        video.play()
+      if (!this.isPausedByButton) {
+        if (value) {
+          video.pause()
+        } else {
+          video.play()
+        }
+        this.isPlaying = !value
       }
-      this.isPlaying = !value
     },
     toggleFullscreen () {
       if (!this.fullscreenMode) {

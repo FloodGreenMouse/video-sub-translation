@@ -1,6 +1,9 @@
 <template lang="pug">
-  .subtitle-component(:style="{'bottom': `${showControls ? '70px' : '20px'} `}")
-    translateWindow(:currentText="currentText" @pauseVideo="pauseVideo")
+  .subtitle-component(
+    @mouseenter="pauseVideo(true)"
+    @mouseleave="pauseVideo(false)"
+    :style="{'bottom': `${showControls ? '70px' : '20px'} `}")
+    translateWindow(:currentText="currentText")
 </template>
 
 <script>
@@ -79,10 +82,21 @@ export default {
 <style lang="scss" scoped>
   .subtitle-component {
     position: absolute;
+    left: 0;
+    right: 0;
+    margin: auto;
+    max-width: 840px;
+    width: 100%;
     bottom: 60px;
+    padding-bottom: 20px;
+    padding-top: 20px;
     display: flex;
     justify-content: center;
-    width: 100%;
-    transition: bottom 0.3s ease;
+    border-radius: 4px;
+    transition: bottom 0.3s ease, background-color 0.2s ease;
+    background-color: transparent;
+    &:hover {
+      background-color: rgba(#9dc2ff, 0.3);
+    }
   }
 </style>

@@ -1,18 +1,18 @@
 <template lang="pug">
   .translate-window-component
-    transition(name="fadeUp" :duration="100")
+    transition(name="fade" :duration="100")
       .window.flex.column.center(v-show="showWindow" ref="translateWindow")
         .preloader(v-if="isLoading")
           vPreloader
-        .content(v-if="hasTranslation")
+        .content(v-if="!isLoading && hasTranslation")
           .head
-            span {{ currentWord }}
-            sup.pos &nbsp; {{ [currentPos] }}
+            span {{ word }}
+            sup.pos &nbsp; {{ [pos] }}
           .transcription
-            span {{ [currentTranscription] }}
+            span {{ [transcription] }}
           .translation
-            span {{ currentTranslation }}
-        .no-translation(v-if="!hasTranslation")
+            span {{ translation }}
+        .no-translation(v-if="!isLoading && !hasTranslation")
           span Слово не найдено
     .text.flex.j-center
       span(
@@ -41,10 +41,11 @@ export default {
     return {
       showWindow: false,
       isLoading: false,
-      currentWord: '',
-      currentPos: '',
-      currentTranscription: '',
-      currentTranslation: '',
+      word: '',
+      pos: '',
+      transcription: '',
+      translation: '',
+      cash: [],
       hasTranslation: false,
       timer: null
     }
@@ -52,37 +53,64 @@ export default {
   methods: {
     getTranslate (target, word) {
       this.isLoading = true
-      this.$emit('pauseVideo', true)
+      this.updateWindowPosition(target)
       this.resetTranslation()
       let currentWord = word.replace(/\W/g, '')
-      currentWord = currentWord.toLowerCase()
-      this.currentWord = currentWord
+      currentWord = currentWord.toLowerCase().trim()
+      this.word = currentWord
       clearTimeout(this.timer)
+      const cashedWord = this.cash.find(item => item.word === currentWord)
       if (currentWord.length > 1) {
-        this.updateWindowPosition(target)
-        this.timer = setTimeout(() => {
-          this.$store.dispatch('getTranslate', currentWord).then(res => {
-            if (res.data.def.length) {
-              this.currentPos = res.data.def[0].pos
-              this.currentTranscription = res.data.def[0].ts
-              this.currentTranslation = res.data.def[0].tr[0].text
-              this.hasTranslation = true
-            } else {
-              this.resetTranslation()
-            }
-            this.updateWindowPosition(target)
-          }).catch(e => {
-            console.warn('Error', e)
-          }).finally(() => {
-            this.isLoading = false
-          })
-        }, 300)
+        if (!cashedWord) {
+          this.timer = setTimeout(() => {
+            this.getTranslation(target, currentWord)
+          }, 300)
+        } else {
+          this.word = cashedWord.word
+          this.pos = cashedWord.pos
+          this.transcription = cashedWord.transcription
+          this.translation = cashedWord.translation
+          this.isLoading = false
+          this.hasTranslation = cashedWord.hasTranslation
+        }
+      } else {
+        this.isLoading = false
+        this.hasTranslation = false
       }
+    },
+    getTranslation (target, currentWord) {
+      this.$store.dispatch('getTranslate', currentWord).then(res => {
+        if (res.data.def.length) {
+          this.cash.push(currentWord)
+          this.pos = res.data.def[0].pos
+          this.transcription = res.data.def[0].ts
+          this.translation = res.data.def[0].tr[0].text
+          this.hasTranslation = true
+          this.cash.push({
+            word: this.word,
+            pos: this.pos,
+            transcription: this.transcription,
+            translation: this.translation,
+            hasTranslation: true
+          })
+        } else {
+          this.cash.push({
+            word: this.word,
+            hasTranslation: false
+          })
+          this.resetTranslation()
+        }
+      }).catch(e => {
+        this.hasTranslation = false
+        console.warn('Error', e)
+      }).finally(() => {
+        this.updateWindowPosition(target)
+        this.isLoading = false
+      })
     },
     closeTranslate () {
       clearTimeout(this.timer)
       this.showWindow = false
-      this.$emit('pauseVideo', false)
     },
     updateWindowPosition (target) {
       const translate = this.$refs.translateWindow
@@ -95,9 +123,9 @@ export default {
       }, 1)
     },
     resetTranslation () {
-      this.currentPos = ''
-      this.currentTranscription = ''
-      this.currentTranslation = ''
+      this.pos = ''
+      this.transcription = ''
+      this.translation = ''
       this.hasTranslation = false
     }
   }
@@ -146,8 +174,8 @@ export default {
     }
     .window {
       position: fixed;
-      min-height: 50px;
-      min-width: 50px;
+      min-height: 100px;
+      min-width: 150px;
       max-width: 320px;
       background-color: #ffffff;
       border-radius: 4px;
