@@ -90,13 +90,13 @@ export default {
   data () {
     return {
       isPlaying: false,
+      isFocused: false,
       isPausedByButton: false,
       isVolumeOff: false,
       isVolumeChanging: false,
       fullscreenMode: false,
       controlsHovered: false,
       showControls: true,
-      isWindowFocused: false,
       showSubtitles: true,
       hideControlsTimer: null,
       lastVolume: 1,
@@ -143,8 +143,8 @@ export default {
     toggleSubtitles () {
       this.showSubtitles ? this.showSubtitles = false : this.showSubtitles = true
     },
-    toggleFocus () {
-      this.isWindowFocused = true
+    toggleFocus (e) {
+      this.$el.contains(e.target) && this.$el !== e.target ? this.isFocused = true : this.isFocused = false
     },
     setVolume (value) {
       this.$refs.video.volume = value / 100
@@ -246,9 +246,68 @@ export default {
     setVideoProgress (value) {
       const video = this.$refs.video
       video.currentTime = video.duration * (value / 100)
+    },
+    keyboardRewind (direction) {
+      const video = this.$refs.video
+      if (direction === 'forward') {
+        video.currentTime = video.currentTime + 5
+      } else {
+        video.currentTime = video.currentTime - 5
+      }
+    },
+    keyboardVolume (direction) {
+      const video = this.$refs.video
+      const step = 0.2
+      if (direction === 'up') {
+        const volume = video.volume + step
+        volume > 1 ? video.volume = 1 : video.volume += step
+        this.currentVolume = video.volume
+        this.lastVolume = video.volume
+      } else {
+        const volume = video.volume - step
+        volume < 0 ? video.volume = 0 : video.volume -= step
+        this.currentVolume = video.volume
+        this.lastVolume = video.volume
+      }
+    },
+    keyboardControls (e) {
+      if (this.isFocused) {
+        switch (e.which) {
+          case 39:
+            e.preventDefault()
+            this.keyboardRewind('forward')
+            break
+          case 37:
+            e.preventDefault()
+            this.keyboardRewind('backward')
+            break
+          case 70:
+            e.preventDefault()
+            this.toggleFullscreen()
+            break
+          case 32:
+            e.preventDefault()
+            this.togglePlaying()
+            break
+          case 38:
+            e.preventDefault()
+            this.keyboardVolume('up')
+            break
+          case 40:
+            e.preventDefault()
+            this.keyboardVolume('down')
+            break
+          case 67:
+            e.preventDefault()
+            this.toggleSubtitles()
+            break
+        }
+      }
     }
   },
   mounted () {
+    document.addEventListener('click', this.toggleFocus)
+    document.addEventListener('keydown', this.keyboardControls)
     this.$refs.video.addEventListener('loadedmetadata', this.getVideoDuration)
     document.onfullscreenchange = () => {
       this.exitFullscreenOnEscape()
@@ -257,6 +316,8 @@ export default {
     this.$el.addEventListener('mousemove', this.toggleControls)
   },
   beforeDestroy () {
+    document.removeEventListener('click', this.toggleFocus)
+    document.removeEventListener('keydown', this.keyboardControls)
     this.$refs.video.removeEventListener('loadedmetadata', this.getVideoDuration)
     document.onfullscreenchange = null
     this.$refs.video.removeEventListener('timeupdate', this.getCurrentVideoTime)
